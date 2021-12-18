@@ -3,6 +3,8 @@
 
 // для подзагрузки персонажей используется библиотека pull_to_refresh
 
+import 'dart:async';
+
 import 'package:fa_rick_and_morty/data/bloc/character_bloc.dart';
 import 'package:fa_rick_and_morty/data/models/character.dart';
 import 'package:fa_rick_and_morty/ui/widgets/custom_list_tile.dart';
@@ -40,6 +42,9 @@ class _SearchPageState extends State<SearchPage> {
 
   /// Текущее хранилище.
   final _storage = HydratedBlocOverrides.current?.storage;
+
+  /// Задержка обращения к серверу при вводе значений в строке поиска
+  Timer? searchDebounce;
 
   // При инициализации состояния
   // лучшее место для первичного запроса к API Rick and Morty
@@ -116,10 +121,16 @@ class _SearchPageState extends State<SearchPage> {
               /// Сюда передаём то, что ввёл пользователь
               _currentSearchString = value;
 
-              // -- при осуществлении поиска обращаемся к нашему событию
-              context
-                  .read<CharacterBloc>()
-                  .add(CharacterEvent.fetch(name: value, page: _currentPage));
+              // ТАЙМЕР ЗАПРОСА (ожидаем ввода всех значений в строке поиска)
+              // -- отменяем последний таймер при изменении текста
+              searchDebounce?.cancel();
+              // -- ставим запрос к серверу на таймер
+              searchDebounce = Timer(const Duration(milliseconds: 500), () {
+                // -- при осуществлении поиска обращаемся к нашему событию
+                context
+                    .read<CharacterBloc>()
+                    .add(CharacterEvent.fetch(name: value, page: _currentPage));
+              });
             },
           ),
         ),
