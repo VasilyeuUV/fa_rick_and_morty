@@ -3,6 +3,7 @@
 
 import 'package:fa_rick_and_morty/data/bloc/character_bloc.dart';
 import 'package:fa_rick_and_morty/data/models/character.dart';
+import 'package:fa_rick_and_morty/ui/widgets/custom_list_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -150,13 +151,7 @@ class _SearchPageState extends State<SearchPage> {
         return Padding(
           padding:
               const EdgeInsets.only(right: 16, left: 16, top: 3, bottom: 3),
-          child: ListTile(
-            // -- отображаемое название
-            title: Text(
-              result.name,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
+          child: CustomListTile(result: result),
         );
       },
     );
