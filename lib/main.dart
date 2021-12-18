@@ -1,7 +1,15 @@
+import 'package:fa_rick_and_morty/data/bloc_observable.dart';
 import 'package:fa_rick_and_morty/ui/pages/home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-void main() => runApp(const App());
+void main() {
+// подключаем отслеживание bloc_observable.dart
+  BlocOverrides.runZoned(
+    () => runApp(const App()),
+    blocObserver: CharacterBlocObservable(),
+  );
+}
 
 class App extends StatelessWidget {
   const App({Key? key}) : super(key: key);

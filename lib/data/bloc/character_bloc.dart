@@ -32,12 +32,18 @@ class CharacterBloc extends Bloc<CharacterEvent, CharacterState> {
       // -- и в параметр loaded передаём наши персонажи,
       // -- полученные из репозитория
       try {
-        Character _characterLoaded =
-            await characterRepository.getCharacter(event.page, event.name);
+        Character _characterLoaded = await characterRepository
+            .getCharacter(event.page, event.name)
+            // -- таймаут в 5 секунд для загрузки, чтобы не подвисло при ошибке
+            .timeout(const Duration(seconds: 5));
         emit(CharacterState.loaded(characterLoaded: _characterLoaded));
       } catch (_) {
         // -- если что-то не так, эмиттим состояние error
         emit(const CharacterState.error());
+
+        // -- чтобы отправить ошибки в bloc_observable.dart
+        // -- отправляем её дальше
+        rethrow;
       }
     });
   }
