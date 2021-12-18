@@ -120,8 +120,10 @@ class _SearchPageState extends State<SearchPage> {
               loaded: (characterLoaded) {
                 _currentCharacter = characterLoaded;
                 _currentResults = _currentCharacter.results;
+                // -- отображаем результат загрузки
                 return _currentResults.isNotEmpty
-                    ? Text('$_currentResults')
+                    // -- отображаем список
+                    ? _customListView(_currentResults)
                     // -- иначе ничего не отображаем
                     : const SizedBox();
               },
@@ -130,6 +132,33 @@ class _SearchPageState extends State<SearchPage> {
               error: () => const Text('Nothing found...')),
         ),
       ],
+    );
+  }
+
+  Widget _customListView(List<Results> currentResults) {
+    return ListView.separated(
+      itemCount: currentResults.length,
+      // - разделитель между карточками результата
+      // - _ - первый параметр не принимаем
+      separatorBuilder: (_, index) => const SizedBox(height: 5),
+      // - чтобы ListView занимал только нужное пространство
+      //-  в зависимости от количества элементов, а не всё
+      shrinkWrap: true,
+      // - создание пункта
+      itemBuilder: (context, index) {
+        final result = currentResults[index];
+        return Padding(
+          padding:
+              const EdgeInsets.only(right: 16, left: 16, top: 3, bottom: 3),
+          child: ListTile(
+            // -- отображаемое название
+            title: Text(
+              result.name,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        );
+      },
     );
   }
 }
