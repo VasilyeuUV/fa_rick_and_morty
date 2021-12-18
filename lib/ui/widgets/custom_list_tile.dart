@@ -2,6 +2,7 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fa_rick_and_morty/data/models/character.dart';
+import 'package:fa_rick_and_morty/ui/widgets/character_status.dart';
 import 'package:flutter/material.dart';
 
 class CustomListTile extends StatelessWidget {
@@ -48,6 +49,18 @@ class CustomListTile extends StatelessWidget {
                   // - отступ
                   const SizedBox(
                     height: 10,
+                  ),
+                  // - состояние персонажа
+                  CharacterStatus(
+                    liveState: result.status == 'Alive'
+                        ? LiveState.alive
+                        : result.status == 'Dead'
+                            ? LiveState.dead
+                            : LiveState.unknow,
+                  ),
+                  // - отступ
+                  const SizedBox(
+                    height: 20,
                   ),
                   // - специализация и пол
                   SizedBox(
