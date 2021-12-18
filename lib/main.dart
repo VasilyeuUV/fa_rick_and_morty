@@ -1,14 +1,39 @@
 import 'package:fa_rick_and_morty/data/bloc_observable.dart';
 import 'package:fa_rick_and_morty/ui/pages/home_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:path_provider/path_provider.dart';
 
-void main() {
-// подключаем отслеживание bloc_observable.dart
-  BlocOverrides.runZoned(
+/// Метод main будет асинхронным, т.к. мы работаем с хранилищем.
+void main() async {
+  /// Виджет используется для взаимодействия с движком Flutter
+  /// т.е. соединяет фреймворк и движок Flutter
+  /// нужен для path_provider. При создании хранилищ на устройствах Android или IoS
+  /// пакет будет использовать каналы платформы для вызова собственного кода,
+  /// который будет выполняться асинхронно
+  WidgetsFlutterBinding.ensureInitialized();
+
+  /// Хранилище, куда будет сохраняться наше состояние
+  /// TemporaryDirectory находится в path_provider
+  final storage = await HydratedStorage.build(
+      // - указываем, что будем хранить состояние
+      // - во временных папках на устройстве
+      storageDirectory: await getTemporaryDirectory());
+
+  HydratedBlocOverrides.runZoned(
+    // - запускаем приложение
     () => runApp(const App()),
+    // - подключаем отслеживание bloc_observable.dart
     blocObserver: CharacterBlocObservable(),
+    // - подключаем хранилище
+    storage: storage,
   );
+
+// // подключаем отслеживание bloc_observable.dart
+//   BlocOverrides.runZoned(
+//     () => runApp(const App()),
+//     blocObserver: CharacterBlocObservable(),
+//   );
 }
 
 class App extends StatelessWidget {

@@ -8,6 +8,7 @@ import 'package:fa_rick_and_morty/data/models/character.dart';
 import 'package:fa_rick_and_morty/ui/widgets/custom_list_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class SearchPage extends StatefulWidget {
@@ -37,17 +38,27 @@ class _SearchPageState extends State<SearchPage> {
   /// контролировать пагинацию (дозагрузку контента) нашего приложения
   bool _isPagination = false;
 
+  /// Текущее хранилище.
+  final _storage = HydratedBlocOverrides.current?.storage;
+
   // При инициализации состояния
   // лучшее место для первичного запроса к API Rick and Morty
   @override
   void initState() {
-    // - если результат пустой, загружаем данные с сайта
-    if (_currentResults.isEmpty) {
-      context
-          .read<CharacterBloc>()
-          // -- обращаемся к нашему событию
-          .add(const CharacterEvent.fetch(name: '', page: 1));
+    // Проверка наличия состояния
+    if (_storage.runtimeType.toString().isEmpty) {
+      // - если наше хранилище пустое
+      if (_currentResults.isEmpty) {
+        // - если результат пустой, загружаем данные с сайта (запрос на сервер)
+        // - при запуске приложения
+        context
+            .read<CharacterBloc>()
+            // -- обращаемся к нашему событию
+            .add(const CharacterEvent.fetch(name: '', page: 1));
+      }
     }
+    // Теперь при перезапуске приложения
+    // мы должны вернуться к последнему состоянию
 
     super.initState();
   }

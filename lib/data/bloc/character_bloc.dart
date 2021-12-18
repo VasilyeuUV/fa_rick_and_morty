@@ -6,15 +6,19 @@ import 'package:fa_rick_and_morty/data/repositories/character_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 
 // Файлы, в которые будет генерироваться весь наш код
 part 'character_bloc.freezed.dart';
-//part 'character_bloc.g.dart';
+part 'character_bloc.g.dart';
 part 'character_event.dart'; // будем ссылаться на наши события
 part 'character_state.dart'; // будем ссылаться на наши состояния
 
 /// Реализовывать bloc будем с помощью библиотеки flutter_bloc
-class CharacterBloc extends Bloc<CharacterEvent, CharacterState> {
+/// Потом Bloc расширим HydratedBloc из пакета hydrated_bloc
+/// для реализации кэширования
+class CharacterBloc extends Bloc<CharacterEvent, CharacterState>
+    with HydratedMixin {
   /// Репозиторий
   final CharacterRepository characterRepository;
 
@@ -47,4 +51,15 @@ class CharacterBloc extends Bloc<CharacterEvent, CharacterState> {
       }
     });
   }
+
+  // ОБЯЗАТЕЛЬНЫЕ МЕТОДЫ пакета hydrated_bloc
+
+  /// Отвечает за восстановление состояния
+  @override
+  CharacterState? fromJson(Map<String, dynamic> json) =>
+      CharacterState.fromJson(json);
+
+  /// Отвечает за сохранение состояния на устройство
+  @override
+  Map<String, dynamic>? toJson(CharacterState state) => state.toJson();
 }

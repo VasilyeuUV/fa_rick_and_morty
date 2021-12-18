@@ -20,12 +20,17 @@ class CharacterState with _$CharacterState {
 
   /// - 3-е состояние - При возникновении ошибки
   const factory CharacterState.error() = CharacterStateError;
+
+  // ДАЛЕЕ ДЛЯ КЭШИРОВАНИЯ
+
+  factory CharacterState.fromJson(Map<String, dynamic> json) =>
+      _$CharacterStateFromJson(json);
 }
 
 
 
 /*
-После создания классf, запустить в терминале команду:
+После создания класса и при каждом изменении, запустить в терминале команду:
 flutter pub run build_runner watch --delete-conflicting-outputs
 
 будут сгенерированы необходимые файлы, 
