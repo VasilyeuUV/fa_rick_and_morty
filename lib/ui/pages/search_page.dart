@@ -1,11 +1,14 @@
 // Страница поиска
 // При запуске приложения здесь будем получать данные о персонажах
 
+// для подзагрузки персонажей используется библиотека pull_to_refresh
+
 import 'package:fa_rick_and_morty/data/bloc/character_bloc.dart';
 import 'package:fa_rick_and_morty/data/models/character.dart';
 import 'package:fa_rick_and_morty/ui/widgets/custom_list_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -26,6 +29,13 @@ class _SearchPageState extends State<SearchPage> {
 
   /// Текущая строка для поиска, которую ввёл пользователь
   String _currentSearchString = '';
+
+  // ДЛЯ pull_to_refresh
+
+  final RefreshController refreshController = RefreshController();
+
+  /// контролировать пагинацию (дозагрузку контента) нашего приложения
+  bool _isPagination = false;
 
   // При инициализации состояния
   // лучшее место для первичного запроса к API Rick and Morty
@@ -105,7 +115,9 @@ class _SearchPageState extends State<SearchPage> {
         Expanded(
           child: state.when(
               // - состояние процесса загрузки персонажа
-              loading: () => Center(
+              loading: () {
+                if (!_isPagination) {
+                  return Center(
                     child: Row(
                       // -- размещаем строку посередине
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -117,10 +129,24 @@ class _SearchPageState extends State<SearchPage> {
                         Text('Loading...'),
                       ],
                     ),
-                  ),
+                  );
+                } else {
+                  // -- иначе добавляем к существующему списку персонажей новых
+                  return _customListView(_currentResults);
+                }
+              },
+              // - состояние Загружено
               loaded: (characterLoaded) {
                 _currentCharacter = characterLoaded;
-                _currentResults = _currentCharacter.results;
+                if (_isPagination) {
+                  _currentResults.addAll(_currentCharacter.results);
+                  // - флаг того, что персонажи загрузились и готовы к отображению
+                  refreshController.loadComplete();
+                  _isPagination = false;
+                } else {
+                  // -- иначе отображаем текущий список
+                  _currentResults = _currentCharacter.results;
+                }
                 // -- отображаем результат загрузки
                 return _currentResults.isNotEmpty
                     // -- отображаем список
@@ -137,23 +163,44 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _customListView(List<Results> currentResults) {
-    return ListView.separated(
-      itemCount: currentResults.length,
-      // - разделитель между карточками результата
-      // - _ - первый параметр не принимаем
-      separatorBuilder: (_, index) => const SizedBox(height: 5),
-      // - чтобы ListView занимал только нужное пространство
-      //-  в зависимости от количества элементов, а не всё
-      shrinkWrap: true,
-      // - создание пункта
-      itemBuilder: (context, index) {
-        final result = currentResults[index];
-        return Padding(
-          padding:
-              const EdgeInsets.only(right: 16, left: 16, top: 3, bottom: 3),
-          child: CustomListTile(result: result),
-        );
+    return SmartRefresher(
+      controller: refreshController,
+      // - когда дойдём до конца списка, появится индикатор загрузки
+      enablePullUp: true,
+      // - чтобы индикатор загрузки при прокручивании вниз не появлялся вверху
+      enablePullDown: false,
+      // - событие при процессе загрузки
+      onLoading: () {
+        _isPagination = true;
+        // -- увеличиваем на 1 нашу текущую страницу
+        _currentPage++;
+        if (_currentPage <= _currentCharacter.info.pages) {
+          // -- получаем новых персонажей
+          context.read<CharacterBloc>().add(CharacterEvent.fetch(
+              name: _currentSearchString, page: _currentPage));
+        } else {
+          // -- если подгружать нечего
+          refreshController.loadNoData();
+        }
       },
+      child: ListView.separated(
+        itemCount: currentResults.length,
+        // - разделитель между карточками результата
+        // - _ - первый параметр не принимаем
+        separatorBuilder: (_, index) => const SizedBox(height: 5),
+        // - чтобы ListView занимал только нужное пространство
+        //-  в зависимости от количества элементов, а не всё
+        shrinkWrap: true,
+        // - создание пункта
+        itemBuilder: (context, index) {
+          final result = currentResults[index];
+          return Padding(
+            padding:
+                const EdgeInsets.only(right: 16, left: 16, top: 3, bottom: 3),
+            child: CustomListTile(result: result),
+          );
+        },
+      ),
     );
   }
 }
