@@ -2,6 +2,7 @@
 // При запуске приложения здесь будем получать данные о персонажах
 
 import 'package:fa_rick_and_morty/data/bloc/character_bloc.dart';
+import 'package:fa_rick_and_morty/data/models/character.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -13,14 +14,30 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
-// При инициализации состояния
-// лучшее место для первичного запроса к API Rick and Morty
+  /// Вся информация об общем количестве страниц и персонажах
+  late Character _currentCharacter;
+
+  /// Массив персонажей
+  List<Results> _currentResults = [];
+
+  /// Текущая страница + для пагинации (подзагрузки персонажей)
+  int _currentPage = 1;
+
+  /// Текущая строка для поиска, которую ввёл пользователь
+  String _currentSearchString = '';
+
+  // При инициализации состояния
+  // лучшее место для первичного запроса к API Rick and Morty
   @override
   void initState() {
-    context
-        .read<CharacterBloc>()
-        // обращаемся к нашему событию
-        .add(const CharacterEvent.fetch(name: '', page: 1));
+    // - если результат пустой, загружаем данные с сайта
+    if (_currentResults.isEmpty) {
+      context
+          .read<CharacterBloc>()
+          // -- обращаемся к нашему событию
+          .add(const CharacterEvent.fetch(name: '', page: 1));
+    }
+
     super.initState();
   }
 
@@ -67,32 +84,51 @@ class _SearchPageState extends State<SearchPage> {
             /// Cобытие изменения текста
             /// value - значение в строке поиска
             onChanged: (value) {
+              // - при любом изменении в строке поиска
+              // - начинаем искать с 1-й страницы
+              _currentPage = 1;
+
+              // - перед каждым новым поиском очищаем предыдущий результат
+              _currentResults = [];
+
+              /// Сюда передаём то, что ввёл пользователь
+              _currentSearchString = value;
+
               // -- при осуществлении поиска обращаемся к нашему событию
               context
                   .read<CharacterBloc>()
-                  .add(CharacterEvent.fetch(name: value, page: 1));
+                  .add(CharacterEvent.fetch(name: value, page: _currentPage));
             },
           ),
         ),
-        state.when(
-            // - состояние процесса загрузки персонажа
-            loading: () => Center(
-                  child: Row(
-                    // -- размещаем строку посередине
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      // -- индикатор загрузки персонажа
-                      CircularProgressIndicator(strokeWidth: 2),
-                      // -- отступ вправо
-                      SizedBox(width: 10),
-                      Text('Loading...'),
-                    ],
+        Expanded(
+          child: state.when(
+              // - состояние процесса загрузки персонажа
+              loading: () => Center(
+                    child: Row(
+                      // -- размещаем строку посередине
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        // -- индикатор загрузки персонажа
+                        CircularProgressIndicator(strokeWidth: 2),
+                        // -- отступ вправо
+                        SizedBox(width: 10),
+                        Text('Loading...'),
+                      ],
+                    ),
                   ),
-                ),
-            loaded: (characterLoaded) => Text('${characterLoaded.info}'),
+              loaded: (characterLoaded) {
+                _currentCharacter = characterLoaded;
+                _currentResults = _currentCharacter.results;
+                return _currentResults.isNotEmpty
+                    ? Text('$_currentResults')
+                    // -- иначе ничего не отображаем
+                    : const SizedBox();
+              },
 
-            // - состояние ошибки
-            error: () => const Text('Nothing found...')),
+              // - состояние ошибки
+              error: () => const Text('Nothing found...')),
+        ),
       ],
     );
   }
